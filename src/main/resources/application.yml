@@ -1,0 +1,7 @@
+app:
+  checkUpdatesPeriod: 1000
+  token: 679996290:AAGTVQhR-lFTnx4nZ3hQKKl9uvrstm-xUOI
+
+spring:
+  application:
+    name: dist-bot
