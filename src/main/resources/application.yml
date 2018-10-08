@@ -4,8 +4,12 @@ server:
 app:
   checkUpdatesPeriod: 1000
   webhookEnabled: true
-  webhookAddress: https://7abcdafa.ngrok.io/receiveUpdate
+  webhookAddress: https://8563516c.ngrok.io/receiveUpdate
   token: 679996290:AAGTVQhR-lFTnx4nZ3hQKKl9uvrstm-xUOI
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: debug
 
 spring:
   application:
