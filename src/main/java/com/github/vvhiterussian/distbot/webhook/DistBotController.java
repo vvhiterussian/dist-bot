@@ -29,7 +29,7 @@ public class DistBotController {
             if (voice != null && voice.getFileId() != null) {
                 log.info("Voice received!");
                 byte[] fileData = apiWrapper.getFile(voice.getFileId());
-                apiWrapper.resendVoice(from, voice);
+                apiWrapper.sendVoice(from, fileData);
             }
         }
     }

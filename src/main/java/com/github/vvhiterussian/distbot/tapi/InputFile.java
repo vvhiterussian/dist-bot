@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @NoArgsConstructor
 @EqualsAndHashCode
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class SendableEntity {
+public class InputFile {
 
     @JsonProperty("chat_id")
     private String userName;

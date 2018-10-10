@@ -6,12 +6,17 @@ import com.github.vvhiterussian.distbot.model.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +34,7 @@ public class TelegramAPIWrapper {
     private static final String getFileMethod = "getFile";
 
     private static final String sendVoiceMethod = "sendVoice";
+    private static final String sendPhotoMethod = "sendPhoto";
 
     private final RestTemplate restTemplate;
     private final AppConfig config;
@@ -70,6 +76,7 @@ public class TelegramAPIWrapper {
     }
 
     public void resendVoice(User user, Voice voice) {
+
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("chat_id", user.getId());
         parameters.put("voice", voice.getFileId());
@@ -78,12 +85,67 @@ public class TelegramAPIWrapper {
     }
 
     public void sendVoice(User user, byte[] data) {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("chat_id", user.getId());
-        body.add("voice", data);
+        try {
+            java.io.File file = new File("/tmp/voice_1.ogg");
+            FileOutputStream fos = new FileOutputStream(file.getPath());
+            fos.write(data);
+            fos.close();
 
-        String response = performPost(getUrl(sendVoiceMethod), body);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("chat_id", user.getId());
+
+            Resource voice = new FileSystemResource(file);
+            body.add("voice", voice);
+
+            String response = performPost(getUrl(sendVoiceMethod), body);
+
+        } catch (Exception e) {
+            log.error("Error sending voice", e);
+        }
+
+
     }
+
+    public void sendPhoto(User user) {
+        try {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("chat_id", user.getId());
+
+            java.io.File file = new File("screen.png");
+            Resource photo = new FileSystemResource(file);
+            body.add("photo", photo);
+
+            String response = performPost(getUrl(sendPhotoMethod), body);
+
+        } catch (Exception e) {
+            log.error("Error sending voice", e);
+        }
+
+
+    }
+
+    //TODO generic sendItem
+//    public <T> void sendItem(Chat chat) {
+//        try {
+//            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+//            body.add("chat_id", chat.getId());
+//
+//
+//            java.io.File tmpFile = java.io.File.createTempFile("tempFile", ".ogg");
+//            FileOutputStream fos = new FileOutputStream(tmpFile.getName());
+//            fos.write(data);
+//            fos.close();
+//
+//            java.io.File file = new File("screen.png");
+//            Resource photo = new FileSystemResource(file);
+//            body.add("photo", photo);
+//
+//            String response = performPost(getUrl(sendPhotoMethod), body);
+//
+//        } catch (Exception e) {
+//            log.error("Error sending voice", e);
+//        }
+//    }
 
     public Update[] getUpdates() {
         try {
@@ -101,9 +163,16 @@ public class TelegramAPIWrapper {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
-        if (response.getStatusCode() == HttpStatus.OK) {
-            return response.getBody();
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            }
+        } catch (HttpClientErrorException e) {
+            String response = e.getResponseBodyAsString();
+            log.error("Error posting request", e);
+        } catch (Exception e) {
+            log.error("Error posting request", e);
         }
 
         return null;

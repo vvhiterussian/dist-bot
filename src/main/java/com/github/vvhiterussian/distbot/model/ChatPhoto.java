@@ -9,16 +9,12 @@ import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Data
-@NoArgsConstructor
 @Component
 @EqualsAndHashCode
+@NoArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class User {
-    private int id;
-    private boolean isBot;
-    private String firstName;
-    private String lastName;
-    private String username;
-    private String languageCode;
+public class ChatPhoto {
+    private String smallFileId;
+    private String bigFileId;
 }

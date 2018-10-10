@@ -36,10 +36,23 @@ public class AppConfig {
                 .setDefaultRequestConfig(config).build();
         return new HttpComponentsClientHttpRequestFactory(httpClient);
     }
+//
+//    @Bean
+//    public ObjectMapper objectMapper() {
+//        ObjectMapper mapper = new ObjectMapper();
+//        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+//        return mapper;
+//    }
+//
+//    @Bean
+//    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(@Autowired ObjectMapper objectMapper) {
+//        return new MappingJackson2HttpMessageConverter(objectMapper);
+//    }
 
     @Bean
-    public RestTemplate getRestTemplate(@Autowired ClientHttpRequestFactory requestFactory) {
-        return new RestTemplate(requestFactory);
+    public RestTemplate restTemplate(@Autowired ClientHttpRequestFactory requestFactory) {
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+        return restTemplate;
     }
 
     @Bean
