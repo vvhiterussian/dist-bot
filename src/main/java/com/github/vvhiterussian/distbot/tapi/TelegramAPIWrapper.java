@@ -3,6 +3,8 @@ package com.github.vvhiterussian.distbot.tapi;
 import com.alibaba.fastjson.JSON;
 import com.github.vvhiterussian.distbot.config.AppConfig;
 import com.github.vvhiterussian.distbot.model.*;
+import com.github.vvhiterussian.distbot.tapi.sendable.SendableEntity;
+import com.github.vvhiterussian.distbot.tapi.sendable.SendableEntityFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +18,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +44,7 @@ public class TelegramAPIWrapper {
     public TelegramAPIWrapper(RestTemplate restTemplate, AppConfig config) {
         this.restTemplate = restTemplate;
         this.config = config;
+
         if (config.isWebhookEnabled()) {
             setWebhook(config.getWebhookAddress());
         }
@@ -75,35 +77,37 @@ public class TelegramAPIWrapper {
         return null;
     }
 
-    public void resendVoice(User user, Voice voice) {
-
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("chat_id", user.getId());
-        parameters.put("voice", voice.getFileId());
-
-        String response = performGet(getUrl(sendVoiceMethod), parameters);
-    }
-
-    public void sendVoice(User user, byte[] data) {
+    public void sendPhoto(Chat chat, Resource resource) {
         try {
-            java.io.File file = new File("/tmp/voice_1.ogg");
-            FileOutputStream fos = new FileOutputStream(file.getPath());
-            fos.write(data);
-            fos.close();
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("chat_id", user.getId());
-
-            Resource voice = new FileSystemResource(file);
-            body.add("voice", voice);
-
-            String response = performPost(getUrl(sendVoiceMethod), body);
-
+            send(chat, resource, PhotoSize.class);
+        } catch (HttpClientErrorException e) {
+            log.error("Error posting request", e);
+            log.error("Response body {}", e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("Error sending voice", e);
         }
 
+    }
 
+    public void sendVoice(Chat chat, Resource resource) {
+        try {
+            send(chat, resource, Voice.class);
+        } catch (HttpClientErrorException e) {
+            log.error("Error posting request", e);
+            log.error("Response body {}", e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error("Error sending voice", e);
+        }
+
+    }
+
+    public void send(Chat chat, Resource resource, Class clazz) throws Exception {
+        SendableEntity sendableEntity = SendableEntityFactory.createSendableEntity(chat, resource, clazz);
+        performSend(sendableEntity);
+    }
+
+    public void performSend(SendableEntity sendableEntity) {
+        performPost(getUrl(sendableEntity.getSendMethod()), sendableEntity.getMap());
     }
 
     public void sendPhoto(User user) {
@@ -124,29 +128,6 @@ public class TelegramAPIWrapper {
 
     }
 
-    //TODO generic sendItem
-//    public <T> void sendItem(Chat chat) {
-//        try {
-//            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-//            body.add("chat_id", chat.getId());
-//
-//
-//            java.io.File tmpFile = java.io.File.createTempFile("tempFile", ".ogg");
-//            FileOutputStream fos = new FileOutputStream(tmpFile.getName());
-//            fos.write(data);
-//            fos.close();
-//
-//            java.io.File file = new File("screen.png");
-//            Resource photo = new FileSystemResource(file);
-//            body.add("photo", photo);
-//
-//            String response = performPost(getUrl(sendPhotoMethod), body);
-//
-//        } catch (Exception e) {
-//            log.error("Error sending voice", e);
-//        }
-//    }
-
     public Update[] getUpdates() {
         try {
             String response = performGet(getUrl(getUpdatesMethod));
@@ -163,16 +144,9 @@ public class TelegramAPIWrapper {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
-                return response.getBody();
-            }
-        } catch (HttpClientErrorException e) {
-            String response = e.getResponseBodyAsString();
-            log.error("Error posting request", e);
-        } catch (Exception e) {
-            log.error("Error posting request", e);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response.getBody();
         }
 
         return null;

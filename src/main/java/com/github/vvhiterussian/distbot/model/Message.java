@@ -5,11 +5,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+//TODO different types of message based on deserializing and instanceof
 @Data
-@NoArgsConstructor
 @Component
 @EqualsAndHashCode
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -61,5 +61,25 @@ public class Message {
     private String connectedWebsite;
     private PassportData passportData;
 
+    private MessageType messageType;
+    private String fileId;
 
+    public Message() {
+
+    }
+
+    public MessageType getMessageType() {
+        if (!StringUtils.isEmpty(this.getText())) {
+            messageType = MessageType.TEXT;
+        } else if (!StringUtils.isEmpty(this.getPhoto())) {
+            messageType = MessageType.PHOTO;
+            fileId = this.getPhoto()[0].getFileId();
+        } else if (!StringUtils.isEmpty(this.getVoice())) {
+            messageType = MessageType.VOICE;
+            fileId = this.getVoice().getFileId();
+        } else {
+            messageType = MessageType.UNKNOWN;
+        }
+        return messageType;
+    }
 }
