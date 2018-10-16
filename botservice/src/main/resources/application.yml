@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+app:
+  dist-bot:
+    webhookEnabled: true
+    webhookAddress: https://776334cc.ngrok.io/receiveUpdate
+    token: 679996290:AAGTVQhR-lFTnx4nZ3hQKKl9uvrstm-xUOI
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: debug
+
+spring:
+  application:
+    name: dist-bot
