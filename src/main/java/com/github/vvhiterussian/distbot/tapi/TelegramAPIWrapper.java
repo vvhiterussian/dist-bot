@@ -1,23 +1,20 @@
 package com.github.vvhiterussian.distbot.tapi;
 
 import com.alibaba.fastjson.JSON;
-import com.github.vvhiterussian.distbot.config.AppConfig;
+import com.github.vvhiterussian.distbot.config.DistBotProperties;
 import com.github.vvhiterussian.distbot.model.*;
 import com.github.vvhiterussian.distbot.tapi.sendable.SendableEntity;
 import com.github.vvhiterussian.distbot.tapi.sendable.SendableEntityFactory;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,23 +31,18 @@ public class TelegramAPIWrapper {
     private static final String deleteWebhookMethod = "deleteWebhook";
     private static final String getFileMethod = "getFile";
 
-    private static final String sendVoiceMethod = "sendVoice";
-    private static final String sendPhotoMethod = "sendPhoto";
+    private static final String sendTextMethod = "sendMessage";
 
     private final RestTemplate restTemplate;
-    private final AppConfig config;
+    private final DistBotProperties distBotProperties;
 
     @Autowired
-    public TelegramAPIWrapper(RestTemplate restTemplate, AppConfig config) {
+    public TelegramAPIWrapper(RestTemplate restTemplate, DistBotProperties distBotProperties) {
         this.restTemplate = restTemplate;
-        this.config = config;
-
-        if (config.isWebhookEnabled()) {
-            setWebhook(config.getWebhookAddress());
-        }
+        this.distBotProperties = distBotProperties;
     }
 
-    private void setWebhook(String webhookAddress) {
+    public void setWebhook(String webhookAddress) {
         deleteWebhook();
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("url", webhookAddress);
@@ -75,6 +67,13 @@ public class TelegramAPIWrapper {
             log.error("Error while downloading file", e);
         }
         return null;
+    }
+
+    public void sendText(Chat chat, String text) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("chat_id", chat.getId());
+        parameters.put("text", text);
+        String result = performPost(getUrl(sendTextMethod), parameters);
     }
 
     public void sendPhoto(Chat chat, Resource resource) {
@@ -110,24 +109,6 @@ public class TelegramAPIWrapper {
         performPost(getUrl(sendableEntity.getSendMethod()), sendableEntity.getMap());
     }
 
-    public void sendPhoto(User user) {
-        try {
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("chat_id", user.getId());
-
-            java.io.File file = new File("screen.png");
-            Resource photo = new FileSystemResource(file);
-            body.add("photo", photo);
-
-            String response = performPost(getUrl(sendPhotoMethod), body);
-
-        } catch (Exception e) {
-            log.error("Error sending voice", e);
-        }
-
-
-    }
-
     public Update[] getUpdates() {
         try {
             String response = performGet(getUrl(getUpdatesMethod));
@@ -137,6 +118,16 @@ public class TelegramAPIWrapper {
             log.error(e.getMessage());
             return null;
         }
+    }
+
+    private String performPost(String url, Map<String, Object> parameters) {
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(parameters);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response.getBody();
+        }
+
+        return null;
     }
 
     private String performPost(String url, MultiValueMap<String, Object> body) {
@@ -184,10 +175,10 @@ public class TelegramAPIWrapper {
     }
 
     private String getUrl(String method) {
-        return String.format(execMethodUrlFormat, config.getToken(), method);
+        return String.format(execMethodUrlFormat, distBotProperties.getToken(), method);
     }
 
     private String getDownloadFileUrl(String filePath) {
-        return String.format(downloadFileUrlFormat, config.getToken(), filePath);
+        return String.format(downloadFileUrlFormat, distBotProperties.getToken(), filePath);
     }
 }

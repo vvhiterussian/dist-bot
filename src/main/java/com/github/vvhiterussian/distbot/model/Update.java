@@ -2,6 +2,7 @@ package com.github.vvhiterussian.distbot.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.github.vvhiterussian.distbot.model.inline.InlineQuery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

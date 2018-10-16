@@ -2,10 +2,10 @@ server:
   port: 8080
 
 app:
-  checkUpdatesPeriod: 1000
-  webhookEnabled: true
-  webhookAddress: https://455dc714.ngrok.io/receiveUpdate
-  token: 679996290:AAGTVQhR-lFTnx4nZ3hQKKl9uvrstm-xUOI
+  dist-bot:
+    webhookEnabled: true
+    webhookAddress: https://f85310f0.ngrok.io/receiveUpdate
+    token: 679996290:AAGTVQhR-lFTnx4nZ3hQKKl9uvrstm-xUOI
 
 logging:
   level:

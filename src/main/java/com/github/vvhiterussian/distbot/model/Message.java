@@ -73,13 +73,25 @@ public class Message {
             messageType = MessageType.TEXT;
         } else if (!StringUtils.isEmpty(this.getPhoto())) {
             messageType = MessageType.PHOTO;
-            fileId = this.getPhoto()[0].getFileId();
+            PhotoSize largestPhoto = this.getPhoto()[this.getPhoto().length - 1];
+            fileId = largestPhoto.getFileId();
         } else if (!StringUtils.isEmpty(this.getVoice())) {
             messageType = MessageType.VOICE;
             fileId = this.getVoice().getFileId();
+        } else if (!StringUtils.isEmpty(this.getDocument())) {
+            messageType = MessageType.DOCUMENT;
+            fileId = this.getDocument().getFileId();
         } else {
             messageType = MessageType.UNKNOWN;
         }
         return messageType;
+    }
+
+    public boolean isCommand() {
+        if (!StringUtils.isEmpty(this.getText())) {
+            return this.getText().startsWith("/");
+        }
+
+        return false;
     }
 }
